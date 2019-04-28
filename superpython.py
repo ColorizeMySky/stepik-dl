@@ -1,9 +1,14 @@
 #! /usr/bin/python3
+
 import json
+import os
 import re
+import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
+import youtube_dl
 
 
 
@@ -21,7 +26,8 @@ def getSteps(data):
 		except urllib.error.HTTPError as e:
 			print('\x1b[31m' + "Houston, we have a problem:" + '\x1b[0m', e.reason)
 
-	print('\x1b[32m' + 'Getting lessons...' + '\x1b[0m')
+	sys.stdout.write('\x1b[32m' + 'Getting lessons...' + '\x1b[0m\r')
+
 	lessons = []
 
 	for unit_id in units:
@@ -34,7 +40,7 @@ def getSteps(data):
 		except urllib.error.HTTPError as e:
 			print('\x1b[31m' + "Houston, we have a problem:" + '\x1b[0m', e.reason)
 
-	print('\x1b[32m' + 'Getting steps...' + '\x1b[0m')
+	sys.stdout.write('\x1b[32m' + 'Getting steps...  ' + '\x1b[0m\r')
 
 	steps = []
 	
@@ -45,10 +51,54 @@ def getSteps(data):
 			with urllib.request.urlopen(lesson_link) as url:
 				res_lesson = json.loads(url.read().decode())
 				steps += res_lesson['lessons'][0]['steps']				
-		except urllib.error.HTTPError as e:
+		except urllib.error.HTTPError as e:			
 			print('\x1b[31m' + "Houston, we have a problem:" + '\x1b[0m', e.reason)
 
 	return steps
+	
+
+
+def getVideo(steps):
+	video_urls = []
+
+	for step_id in steps:
+		step_link = 'https://stepik.org/api/steps?ids[]=' + str(step_id)
+
+		try:
+			with urllib.request.urlopen(step_link) as url:
+				res_step = json.loads(url.read().decode())
+				video = res_step['steps'][0]['block']['video']
+				if not video:
+					pass
+				else:
+					#for smallest quality below
+					video_urls.append(res_step['steps'][0]['block']['video']['urls'][-1]['url'])
+					#for largest quality below
+					#video_urls.append(res_step['steps'][0]['block']['video']['urls'][0]['url'])
+		except urllib.error.HTTPError as e:			
+			print('\x1b[31m' + "Houston, we have a problem:" + '\x1b[0m', e.reason)
+
+	return video_urls
+
+
+
+def downloadVideo(urls, course_id):
+	pwd = os.path.abspath(os.curdir)
+	video_path = pwd + '/Stepic_course_' + course_id + '/%(title)s.%(ext)s'
+
+	for url in urls:		
+		try:  
+			ydl_opts = {
+				'outtmpl': video_path,
+				'format': 'bestaudio/best'
+			}
+			with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+				ydl.download([url])
+		except OSError: 
+			sys.exit('\x1b[36m' + "Something went wrong. Interruption." + '\x1b[0m')
+	print('\x1b[36m' + 'All done!' + '\x1b[0m')	
+
+
 	
 
 
@@ -65,15 +115,23 @@ if not match:
 			sys.exit('\x1b[36m' + "It's the stop of executing. Bye-bye." + '\x1b[0m')
 
 
-print('\x1b[36m' + 'Be patient, mortal, I\'m calculating...' + '\x1b[0m')	
+print('\x1b[36m' + 'Be patient, mortal, I\'m calculating:' + '\x1b[0m')	
 course_id = re.search(pattern, course_link).group(1)
 api_link = "https://stepik.org/api/courses/" + course_id
 
 try:
 	with urllib.request.urlopen(api_link) as url:
 		data = json.loads(url.read().decode())
-		step = getSteps(data)[1]
-		print(step)
+
+		steps = getSteps(data)
+
+		sys.stdout.write('\x1b[32m' + 'Getting links for video...' + '\x1b[0m\r')
+		urls = getVideo(steps)
+
+		sys.stdout.write('\x1b[32m' + 'Loading video...          ' + '\x1b[0m\n')
+		downloadVideo(urls, course_id)
+		
+
 except urllib.error.HTTPError as e:
 	print('\x1b[31m' + "Houston, we have a problem:" + '\x1b[0m', e.reason)
 
