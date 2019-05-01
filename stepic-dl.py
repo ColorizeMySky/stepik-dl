@@ -101,9 +101,15 @@ def downloadVideo(urls, course_id):
 
 
 def makeTask(course_id):
+	pwd = os.path.abspath(os.curdir)
 	lines = ["#!/bin/bash\n", 
 			"cpu=$(uptime | tail -c 3);",
-			"if [[ \"$cpu\" -lt 15 ]]; then video=( $(ls | grep '.mp4') ); videolength=${#video[*]}; cvlc -Irc --rate 2 ${video[$((RANDOM % $videolength))]}; fi;"]
+			"if [[ $cpu -lt 50 ]];",
+			"then",
+			"  video=( $(ls " + pwd + "/Stepic_course_" + course_id + " | grep '.mp4') );",
+			"  videolength=${#video[*]};",
+			"  bash -c \"DISPLAY=:0 cvlc --rate 2 " + pwd + "/Stepic_course_" + course_id + "/${video[$((RANDOM % $videolength))]}\";",
+			"fi;"]
 	try:
 		with open('./Stepic_course_' + course_id + '/course_' + course_id + '.sh', 'x') as file:
 			for  line in lines:
