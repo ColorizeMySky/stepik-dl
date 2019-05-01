@@ -101,12 +101,16 @@ def downloadVideo(urls, course_id):
 
 
 def makeTask(course_id):
+	lines = ["#!/bin/bash\n", 
+			"cpu=$(uptime | tail -c 3);",
+			"if [[ \"$cpu\" -lt 15 ]]; then video=( $(ls | grep '.mp4') ); videolength=${#video[*]}; cvlc -Irc --rate 2 ${video[$((RANDOM % $videolength))]}; fi;"]
 	try:
-		file = open('./Stepic_course_' + course_id + '/course_' + course_id + '.sh', 'x')
-		file.write("Hello, mortals!\n")
+		with open('./Stepic_course_' + course_id + '/course_' + course_id + '.sh', 'x') as file:
+			for  line in lines:
+				file.write(line + '\n')
 		file.close()
 	except:
-		print('\x1b[31m' + 'File exists' + '\x1b[0m\n')
+		print('\x1b[31m' + 'File ./Stepic_course_' + course_id + '/course_' + course_id + '.sh exists' + '\x1b[0m\n')
 
 
 
