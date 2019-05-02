@@ -3,7 +3,6 @@
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 import urllib.error
@@ -99,7 +98,6 @@ def downloadVideo(urls, course_id):
 	print('\x1b[36m' + 'All done!' + '\x1b[0m')	
 
 
-
 def makeTask(course_id):
 	pwd = os.path.abspath(os.curdir)
 	lines = ["#!/bin/bash\n", 
@@ -115,8 +113,10 @@ def makeTask(course_id):
 			for  line in lines:
 				file.write(line + '\n')
 		file.close()
+		os.system( '(crontab -l ; echo "00 19 * * * bash ' + pwd + '/Stepic_course_' + course_id + '/course_' + course_id + '.sh") | crontab -' )
+		print('\x1b[32m' + 'Task created' + '\x1b[0m\n')
 	except:
-		print('\x1b[31m' + 'File ./Stepic_course_' + course_id + '/course_' + course_id + '.sh exists' + '\x1b[0m\n')
+		sys.exit('\x1b[36m' + "Something was going wrong" + '\x1b[0m')
 
 
 
@@ -140,14 +140,14 @@ api_link = "https://stepik.org/api/courses/" + course_id
 try:
 	with urllib.request.urlopen(api_link) as url:
 		data = json.loads(url.read().decode())
-#
-#		steps = getSteps(data)
-#
-#		sys.stdout.write('\x1b[32m' + 'Getting links for video...' + '\x1b[0m\r')
-#		urls = getVideo(steps)
-#
-#		sys.stdout.write('\x1b[32m' + 'Loading video...          ' + '\x1b[0m\n')
-#		downloadVideo(urls, course_id)
+
+		steps = getSteps(data)
+
+		sys.stdout.write('\x1b[32m' + 'Getting links for video...' + '\x1b[0m\r')
+		urls = getVideo(steps)
+
+		sys.stdout.write('\x1b[32m' + 'Loading video...          ' + '\x1b[0m\n')
+		downloadVideo(urls, course_id)
 		
 		makeTask(course_id)		
 
