@@ -1,0 +1,6 @@
+Package: stepik-dl
+Version: 0.0-1
+Section: misc
+Architecture: all
+Maintainer: ColorizeMySky <colorizemysky@gmail.com>
+Description: Just for fun
